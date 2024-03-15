@@ -1,20 +1,30 @@
-from vosk import Model,KaldiRecognizer
-import pyaudio
-model=Model(r"C:\Users\ASUS\Desktop\STT\vosk-model-small-en-us-0.15")
-recognizer=KaldiRecognizer(model,16000)
+from vosk import Model, KaldiRecognizer
+import wave
+from pydub import AudioSegment
 
-mic=pyaudio.PyAudio()
-stream=mic.open(format=pyaudio.paInt16,channels=1,rate=16000,input=True,frames_per_buffer=8192)
-stream.start_stream()
+model_path = r"C:\Users\ASUS\Desktop\STT\vosk-model-small-en-us-0.15"
+model = Model(model_path)
+recognizer = KaldiRecognizer(model, 16000)
 
-while True:
-    data=stream.read(4096)
-    if recognizer.AcceptWaveform(data):
-        text=recognizer.Result()
+audio_file_path = r"C:\Users\ASUS\Desktop\STT\audio_extract.mp3"
+audio = AudioSegment.from_mp3(audio_file_path)
+
+wav_audio_file_path = "audio_extract.wav"
+
+# Export audio to WAV format with the sample rate set to 16 kHz
+audio.export(wav_audio_file_path, format="wav", parameters=["-ac", "1", "-ar", "16000"])
+
+with wave.open(wav_audio_file_path, 'rb') as wave_file:
+    while True:
+        data = wave_file.readframes(4096)
         print("Working..")
-        print(text[14:-3])
+        if len(data) == 0:
+            break
+        recognizer.AcceptWaveform(data)
 
+result = recognizer.FinalResult()
+print("Final Result:", result)
 
-
-
-    
+with open('output.txt', 'a') as f:
+    f.write(result)
+    f.write("\n")
